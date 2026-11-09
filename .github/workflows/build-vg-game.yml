@@ -1,6 +1,8 @@
 name: Build and deploy Vanguard Web
 
 on:
+  push:
+    branches: [main]
   repository_dispatch:
     types: [build-vg-game]
   workflow_dispatch:
