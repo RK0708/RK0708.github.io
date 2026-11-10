@@ -77,10 +77,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          set -euo pipefail
           project="$RUNNER_TEMP/VG-web-project"
-          "$GODOT_BIN" --headless --editor --path "$project" --import
+          validation_log="$RUNNER_TEMP/godot-validation.log"
+          "$GODOT_BIN" --headless --editor --path "$project" --import 2>&1 | tee "$validation_log"
           mkdir -p "$project/build/web"
-          "$GODOT_BIN" --headless --path "$project" --export-release "Web" "$project/build/web/index.html"
+          "$GODOT_BIN" --headless --path "$project" --export-release "Web" "$project/build/web/index.html" 2>&1 | tee -a "$validation_log"
+          if grep -Fq "SCRIPT ERROR: Parse Error:" "$validation_log" || grep -Fq "Failed to load script" "$validation_log"; then
+            echo "Godot reported a script parse or load error during import/export."
+            exit 1
+          fi
           test -s "$project/build/web/index.html"
           site_bytes="$(du -sb "$project/build/web" | cut -f1)"
           if (( site_bytes > 1000000000 )); then
